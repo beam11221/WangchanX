@@ -1,0 +1,1 @@
+python scripts/run_sft.py recipes/llama3-8b/sft/config_qlora.yaml

@@ -21,6 +21,8 @@ from datasets.builder import DatasetGenerationError
 
 from .configs import DataArguments
 from typing import List, Dict, Union
+from ast import literal_eval
+import json
 
 DEFAULT_CHAT_TEMPLATE = "{% for message in messages %}\n{% if message['role'] == 'user' %}\n{{ '<|user|>\n' + message['content'] + eos_token }}\n{% elif message['role'] == 'system' %}\n{{ '<|system|>\n' + message['content'] + eos_token }}\n{% elif message['role'] == 'assistant' %}\n{{ '<|assistant|>\n'  + message['content'] + eos_token }}\n{% endif %}\n{% if loop.last and add_generation_prompt %}\n{{ '<|assistant|>' }}\n{% endif %}\n{% endfor %}"
 
@@ -47,6 +49,9 @@ def apply_chat_template(
 ):
     if task in ["sft", "generation"]:
         messages = example["messages"]
+        if not isinstance(messages, list):
+            messages = literal_eval(messages)
+
         # We add an empty system message if there is none
         if auto_insert_empty_system_msg:
             maybe_insert_system_message(messages, tokenizer)
@@ -217,12 +222,16 @@ def mix_datasets(
                 # Try first if dataset on a Hub repo
                 if ds.endswith('.json'):
                     dataset = load_dataset("json" , data_files=ds, split=split)
+
                 else:
-                    dataset = load_dataset(ds, ds_config, split=split)
+                    #dataset = load_dataset(ds, ds_config, split=split)
+                    dataset = load_from_disk(os.path.join(ds, split))
+                    
             except DatasetGenerationError:
                 # If not, check local dataset
                 dataset = load_from_disk(os.path.join(ds, split))
 
+            
             # Remove redundant columns to avoid schema conflicts on load
             dataset = dataset.remove_columns([col for col in dataset.column_names if col not in columns_to_keep])
             if "train" in split:

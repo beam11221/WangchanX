@@ -20,6 +20,9 @@ Supervised fine-tuning script for decoder language models.
 import logging
 import random
 import sys
+import pandas as pd
+from pathlib import Path
+import datetime
 
 sys.path.append(".")
 import os
@@ -35,8 +38,9 @@ from alignment import (DataArguments, H4ArgumentParser, ModelArguments,
                        get_datasets, get_kbit_device_map, get_peft_config,
                        get_quantization_config, get_tokenizer)
 
-logger = logging.getLogger(__name__)
+from callbacks import PredictionCallback
 
+logger = logging.getLogger(__name__)
 
 def main():
     parser = H4ArgumentParser((ModelArguments, DataArguments, SFTConfig))
@@ -116,7 +120,8 @@ def main():
     model_kwargs = dict(
         revision=model_args.model_revision,
         trust_remote_code=model_args.trust_remote_code,
-        use_flash_attention_2=model_args.use_flash_attention_2,
+        # use_flash_attention_2=model_args.use_flash_attention_2,
+        attn_implementation="flash_attention_2",
         torch_dtype=torch_dtype,
         use_cache=False if training_args.gradient_checkpointing else True,
         device_map=get_kbit_device_map() if quantization_config is not None else None,
@@ -160,13 +165,13 @@ def main():
     if training_args.do_eval:
         eval_dataset = raw_datasets["test"]
 
-    with training_args.main_process_first(
-        desc="Log a few random samples from the processed training set"
-    ):
-        for index in random.sample(range(len(raw_datasets["train"])), 3):
-            logger.info(
-                f"Sample {index} of the processed training set:\n\n{raw_datasets['train'][index]['text']}"
-            )
+    # with training_args.main_process_first(
+    #     desc="Log a few random samples from the processed training set"
+    # ):
+    #     for index in random.sample(range(len(raw_datasets["train"])), 3):
+    #         logger.info(
+    #             f"Sample {index} of the processed training set:\n\n{raw_datasets['train'][index]['text']}"
+    #         )
 
     ########################
     # Initialize the Trainer
@@ -185,6 +190,13 @@ def main():
         peft_config=get_peft_config(model_args),
         dataset_kwargs=training_args.dataset_kwargs,
     )
+
+    # prediction_callback = PredictionCallback(
+    #     tokenizer=tokenizer,
+    #     output_dir=os.path.join(training_args.output_dir,"predictions"),
+    #     text_column="prompt"
+    # )
+    # trainer.add_callback(prediction_callback)
 
     ###############
     # Training loop
