@@ -1,1 +1,2 @@
-python scripts/run_sft.py recipes/llama3-8b/sft/config_qlora.yaml
+# python scripts/run_sft.py recipes/llama3-8b/sft/config_qlora.yaml
+ACCELERATE_LOG_LEVEL=info accelerate launch --config_file recipes/accelerate_configs/multi_gpu.yaml --num_processes=4 scripts/run_sft.py recipes/llama3-8b/sft/config_qlora.yaml

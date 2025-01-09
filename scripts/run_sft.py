@@ -38,7 +38,7 @@ from alignment import (DataArguments, H4ArgumentParser, ModelArguments,
                        get_datasets, get_kbit_device_map, get_peft_config,
                        get_quantization_config, get_tokenizer)
 
-from callbacks import PredictionCallback
+# from callbacks import PredictionCallback
 
 logger = logging.getLogger(__name__)
 
