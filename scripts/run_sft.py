@@ -139,7 +139,6 @@ def main():
         )
         model, tokenizer = setup_chat_format(model, tokenizer)
         model_kwargs = None
-
     #####################
     # Apply chat template
     #####################
@@ -148,15 +147,16 @@ def main():
         fn_kwargs={
             "tokenizer": tokenizer,
             "task": "sft",
-            "auto_insert_empty_system_msg": data_args.auto_insert_empty_system_msg,
+            "auto_insert_empty_system_msg": False
+            # "auto_insert_empty_system_msg": data_args.auto_insert_empty_system_msg,
         },
         num_proc=data_args.preprocessing_num_workers,
         remove_columns=column_names,
         desc="Applying chat template",
     )
     raw_datasets = raw_datasets.filter(
-        lambda x: len(tokenizer(x["text"], add_special_tokens=False)["input_ids"])
-        < training_args.max_seq_length,
+        lambda x: len(x["text"])
+        < (training_args.max_seq_length*1.1),
         num_proc=8,
     )
 
@@ -165,14 +165,14 @@ def main():
     if training_args.do_eval:
         eval_dataset = raw_datasets["test"]
 
-    # with training_args.main_process_first(
-    #     desc="Log a few random samples from the processed training set"
-    # ):
-    #     for index in random.sample(range(len(raw_datasets["train"])), 3):
-    #         logger.info(
-    #             f"Sample {index} of the processed training set:\n\n{raw_datasets['train'][index]['text']}"
-    #         )
-
+    with training_args.main_process_first(
+        desc="Log a few random samples from the processed training set"
+    ):
+        for index in random.sample(range(len(raw_datasets["train"])), 1):
+            logger.info(
+                f"Sample {index} of the processed training set:\n\n{raw_datasets['train'][index]['text']}"
+            )
+    
     ########################
     # Initialize the Trainer
     ########################
@@ -184,8 +184,14 @@ def main():
         train_dataset=train_dataset,
         eval_dataset=eval_dataset if training_args.do_eval else None,
         dataset_text_field="text",
-        max_seq_length=training_args.max_seq_length,
         tokenizer=tokenizer,
+        max_seq_length=training_args.max_seq_length,
+        # padding=True,
+        # truncation=True,
+        # train_formatting_kwargs={
+        #     "truncation": True,
+        #     "padding": True
+        # },
         packing=False,
         peft_config=get_peft_config(model_args),
         dataset_kwargs=training_args.dataset_kwargs,

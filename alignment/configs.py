@@ -219,10 +219,10 @@ class DataArguments:
         metadata={"help": "The number of processes to use for the preprocessing."},
     )
     truncation_side: Optional[str] = field(
-        default=None, metadata={"help": "Truncation side to use for the tokenizer."}
+        default="right", metadata={"help": "Truncation side to use for the tokenizer."}
     )
     tokenizer_padding_side: Optional[str] = field(
-        default="left",
+        default="right",
         metadata={"help": "Padding side to use for the tokenizer. Defaults to 'left'."},
     )
     auto_insert_empty_system_msg: bool = field(
@@ -298,6 +298,7 @@ class ORPOConfig(transformers.TrainingArguments):
         default=None,
         metadata={"help": "The maximum length of the prompt."},
     )
+    # max_completion_length: Optional[int] = field(
     max_completion_length: Optional[int] = field(
         default=None,
         metadata={"help": "The maximum length of the completions."},
